@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from utils import detect_indicator_type
 from collections import defaultdict, Counter
+from api_clients import call_virustotal
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'  # Change for production
@@ -60,15 +61,15 @@ def dashboard():
                      (session['user_id'], indicator, itype, datetime.now().isoformat()))
         conn.commit()
         conn.close()
-
+        vt_result = call_virustotal(indicator, key_row['api_key']) if key_row else {"name": "VirusTotal", "hit": False, "url": "#"}
         result = {
             'indicator': indicator,
             'indicator_type': itype,
             'fun_fact': fun_fact,
-            'vendors': ['VirusTotal', 'URLScan', 'ThreatQ'],  # Mock data
+            'vendors': [vt_result] if vt_result["hit"] else [],
             'splunk_query': f'index=threatintel "{indicator}"',
             'sentinel_query': f'SecurityEvent | where EventData contains "{indicator}"'
-        }
+            }
         return render_template('result.html', result=result)
 
     return render_template('dashboard.html', history=history)
