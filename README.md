@@ -1,49 +1,46 @@
-# ThirdEye Intelligence Web App (SOC + Ransomware Tracker)
+# 🔍 ThirdEye Intelligence - SOC Analyst Web Application
 
-This is a Flask-based web application for SOC analysts. It includes indicator analysis and a ransomware tracking feature for incidents in Australia.
-
----
-
-## ✅ Features
-
-- User Login (admin / admin)
-- Indicator Analysis: IPs, URLs, Domains, Hashes, CVEs
-- Fun Facts per Indicator Type
-- Vendor API Key Management
-- Historical Search Log
-- Splunk & Sentinel Query Generator
-- Ransomware Tracker:
-  - Incident Submission
-  - Yearly Tabs
-  - Tagging with Colored Labels
-  - Live Search (no button!)
-  - Top 10 Group & Sector Charts
+A complete Flask-based threat intelligence web application for SOC analysts to:
+- Investigate IPs, hashes, domains, CVEs
+- Retrieve multi-vendor intelligence (VirusTotal, etc.)
+- Generate SIEM hunting queries (Sentinel, Splunk, etc.)
+- Track ransomware attacks across industries and time
+- Manage user access with admin functionality
+- Choose between Dark/Light theme
 
 ---
 
-## 🔧 Setup Instructions
+## 🚀 Features
 
-```bash
-# Install required packages
+- 🔐 Login/authentication with admin/user roles
+- 🧪 Hash lookup with vendor scoring + fun verdicts
+- 📜 Threat hunting queries with copy-to-clipboard
+- 📈 Visual dashboards for vendor detection and trends
+- 🛡️ Ransomware incident tracking (group, org, sector)
+- 👤 API key management per vendor
+- 🎨 Theme toggle (dark/light) stored in profile
+- 📊 Historical search logs with drill-down capability
+
+---
+
+## 📁 Project Structure
+
+thirdeye/
+├── app.py
+├── init_db.py
+├── api_clients.py
+├── utils.py
+├── thirdeye.db
+├── static/
+│ └── logo.png
+├── templates/
+│ ├── login.html
+│ ├── dashboard.html
+│ ├── result.html
+│ ├── profile.html
+│ └── ransomware_tracker.html
+
 pip3 install -r requirements.txt
 
-# Initialize the database
 python3 init_db.py
-
-# Run the Flask app
 python3 app.py
-
-thirdeye_app/
-├── app.py
-├── utils.py
-├── init_db.py
-├── requirements.txt
-├── README.md
-├── templates/
-│   ├── login.html
-│   ├── dashboard.html
-│   ├── result.html
-│   ├── profile.html
-│   └── ransomware_tracker.html
-└── static/
-    └── logo.png

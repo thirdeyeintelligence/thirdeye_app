@@ -1,57 +1,140 @@
-<!-- templates/dashboard.html -->
-
-<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Dashboard - ThirdEye Intelligence</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <title>Dashboard - ThirdEye Intelligence</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+  body.dark-mode {
+    background-color: #121212;
+    color: #f0f0f0;
+  }
+  .dark-mode .table,
+  .dark-mode .form-control {
+    background-color: #1e1e1e;
+    color: #eee;
+    border-color: #444;
+  }
+  .chart-container {
+    max-width: 500px;
+    margin: 30px auto;
+  }
+  .chart-container canvas {
+    height: 300px !important;
+    max-height: 300px;
+  }
+</style>
 </head>
-<body class="bg-light">
+<body class="{{ 'dark-mode' if session.get('theme') == 'dark' else '' }}">
 
 <nav class="navbar navbar-dark bg-dark px-3">
-    <span class="navbar-brand">ThirdEye Intelligence</span>
-    <div>
-        <a href="/profile" class="btn btn-outline-light btn-sm me-2">Profile</a>
-        <a href="/ransomware-tracker" class="btn btn-outline-warning btn-sm me-2">Ransomware Tracker</a>
-        <a href="/logout" class="btn btn-outline-light btn-sm">Logout</a>
-    </div>
+  <span class="navbar-brand">ThirdEye Dashboard</span>
+  <div>
+    <a href="/profile" class="btn btn-outline-light btn-sm me-2">Profile</a>
+    <a href="/ransomware" class="btn btn-outline-light btn-sm me-2">Ransomware Tracker</a>
+    <a href="/logout" class="btn btn-outline-light btn-sm">Logout</a>
+  </div>
 </nav>
 
-<div class="container mt-5">
-    <h3 class="mb-4">Search Threat Indicators</h3>
+<div class="container mt-4">
+  <h3>🕵️ Indicator Lookup</h3>
+  <form method="POST" class="row g-3 mb-5">
+    <div class="col-md-10"><input name="indicator" class="form-control" placeholder="Enter IP, Domain, URL, Hash or CVE" required></div>
+    <div class="col-md-2"><button class="btn btn-primary w-100">Search</button></div>
+  </form>
 
-    <form method="POST">
-        <input type="text" name="indicator" class="form-control mb-3" placeholder="Enter IP, URL, domain, hash or CVE..." required>
-        <button type="submit" class="btn btn-primary">Search</button>
-    </form>
+  <h4>📜 Historical Searches</h4>
+  <table class="table table-hover table-bordered">
+    <thead><tr><th>Indicator</th><th>Type</th><th>User</th><th>Date</th><th>Verdict</th></tr></thead>
+    <tbody>
+    {% for entry in history %}
+      <tr onclick="window.location.href='/result/{{ entry.indicator }}'" style="cursor:pointer;">
+        <td>{{ entry.indicator }}</td>
+        <td>{{ entry.type }}</td>
+        <td>{{ entry.username }}</td>
+        <td>{{ entry.timestamp.split('T')[0] }}</td>
+        <td>
+          {% if 'mal' in entry.verdict|lower %}
+            <span class="badge text-bg-danger">{{ entry.verdict }}</span>
+          {% elif 'safe' in entry.verdict|lower %}
+            <span class="badge text-bg-success">{{ entry.verdict }}</span>
+          {% else %}
+            <span class="badge text-bg-warning text-dark">{{ entry.verdict }}</span>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
 
-    <hr class="my-5">
+  <div class="row">
+    <div class="col-md-6 chart-container">
+      <h5 class="text-center">📊 Verdict Distribution</h5>
+      <canvas id="verdictChart"></canvas>
+    </div>
+    <div class="col-md-6 chart-container">
+      <h5 class="text-center">📈 Search Trend</h5>
+      <canvas id="trendChart"></canvas>
+    </div>
+  </div>
 
-    <h4>Historical Searches</h4>
-    {% if history %}
-        <table class="table table-striped mt-3">
-            <thead>
-                <tr>
-                    <th>Indicator</th>
-                    <th>Type</th>
-                    <th>Timestamp</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in history %}
-                <tr>
-                    <td>{{ item['indicator'] }}</td>
-                    <td>{{ item['type'] }}</td>
-                    <td>{{ item['timestamp'] }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p class="text-muted">No searches yet.</p>
-    {% endif %}
+  <div class="chart-container">
+    <h5 class="text-center">🔍 Indicator Types Queried</h5>
+    <canvas id="typeChart"></canvas>
+  </div>
 </div>
+
+<script>
+const verdictData = {
+  labels: {{ stats | map(attribute='verdict') | list | tojson }},
+  datasets: [{
+    data: {{ stats | map(attribute='count') | list | tojson }},
+    backgroundColor: ['#dc3545', '#ffc107', '#198754']
+  }]
+};
+
+const trendData = {
+  labels: {{ trend_data | map(attribute='day') | list | tojson }},
+  datasets: [{
+    label: 'Searches',
+    data: {{ trend_data | map(attribute='count') | list | tojson }},
+    borderColor: '#0d6efd',
+    fill: false,
+    tension: 0.3
+  }]
+};
+
+const typeData = {
+  labels: {{ type_counts | map(attribute='type') | list | tojson }},
+  datasets: [{
+    label: 'Count',
+    data: {{ type_counts | map(attribute='count') | list | tojson }},
+    backgroundColor: '#6f42c1'
+  }]
+};
+
+new Chart(document.getElementById('verdictChart'), {
+  type: 'pie',
+  data: verdictData,
+  options: { responsive: true, maintainAspectRatio: false }
+});
+
+new Chart(document.getElementById('trendChart'), {
+  type: 'line',
+  data: trendData,
+  options: { responsive: true, maintainAspectRatio: false }
+});
+
+new Chart(document.getElementById('typeChart'), {
+  type: 'bar',
+  data: typeData,
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: { y: { beginAtZero: true } }
+  }
+});
+</script>
 
 </body>
 </html>
