@@ -9,18 +9,9 @@
       background-color: #121212;
       color: #f0f0f0;
     }
-    .dark-mode .form-control,
-    .dark-mode .form-select,
-    .dark-mode .card {
+    .dark-mode .form-control, .dark-mode .form-select, .dark-mode .card {
       background-color: #1e1e1e;
       color: #f0f0f0;
-      border-color: #444;
-    }
-    .section-title {
-      margin-top: 30px;
-      margin-bottom: 15px;
-      font-weight: 600;
-      font-size: 1.2rem;
     }
   </style>
 </head>
@@ -35,22 +26,32 @@
 </nav>
 
 <div class="container mt-4">
-  <h3>👤 User Profile</h3>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+  <h3 class="mb-4">👤 User Profile</h3>
 
   <form method="POST">
-    <div class="card p-3 mb-4">
-      <div class="section-title">Account Settings</div>
-      <div class="row g-3">
-        <div class="col-md-4">
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">📧 Account Settings</h5>
+        <div class="mb-3">
           <label>Email</label>
           <input type="email" name="email" value="{{ user['email'] }}" class="form-control">
         </div>
-        <div class="col-md-4">
+        <div class="mb-3">
           <label>New Password</label>
           <input type="password" name="new_password" class="form-control">
         </div>
-        <div class="col-md-4">
-          <label>Theme</label>
+        <div class="mb-3">
+          <label>Theme Preference</label>
           <select name="theme" class="form-select">
             <option value="dark" {% if session.get('theme') == 'dark' %}selected{% endif %}>Dark</option>
             <option value="light" {% if session.get('theme') == 'light' %}selected{% endif %}>Light</option>
@@ -59,42 +60,54 @@
       </div>
     </div>
 
-    <div class="card p-3 mb-4">
-      <div class="section-title">API Key Management</div>
-      <div class="row g-3 align-items-end">
-        <div class="col-md-4">
-          <label>Select Vendor</label>
-          <select id="vendorSelect" class="form-select">
-            {% for v in ['VirusTotal', 'URLScan', 'OpenCTI', 'AnyRun', 'AbuseCH'] %}
-              <option value="{{ v }}">{{ v }}</option>
-            {% endfor %}
-          </select>
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">🔐 Saved API Keys</h5>
+        {% for vendor in ['VirusTotal', 'URLScan', 'OpenCTI', 'AnyRun', 'AbuseCH'] %}
+        <div class="mb-3">
+          <label>{{ vendor }}</label>
+          <input type="text" name="{{ vendor }}" value="{% for key in api_keys if key['vendor'] == vendor %}{{ key['api_key'] }}{% endfor %}" class="form-control">
         </div>
-        <div class="col-md-6">
-          <label>API Key</label>
-          <input id="apiKeyInput" type="text" class="form-control">
-        </div>
-        <div class="col-md-2">
-          <button type="button" onclick="testApiKey()" class="btn btn-outline-success w-100">Test</button>
-        </div>
+        {% endfor %}
       </div>
-      <div class="form-text mt-2" id="test-result"></div>
     </div>
 
-    {% for vendor in ['VirusTotal', 'URLScan', 'OpenCTI', 'AnyRun', 'AbuseCH'] %}
-      <input type="hidden" name="{{ vendor }}" id="hidden-{{ vendor }}"
-             value="{% for key in api_keys if key['vendor'] == vendor %}{{ key['api_key'] }}{% endfor %}">
-    {% endfor %}
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">🧪 Test an API Key</h5>
+        <div class="row g-2 align-items-center mb-2">
+          <div class="col-md-4">
+            <select id="apiVendorSelect" class="form-select">
+              <option value="VirusTotal">VirusTotal</option>
+              <option value="AbuseCH">AbuseCH</option>
+              <option value="OpenCTI">OpenCTI</option>
+              <option value="AnyRun">AnyRun</option>
+            </select>
+          </div>
+          <div class="col-md-5">
+            <input id="apiKeyInput" type="text" class="form-control" placeholder="Enter API key">
+          </div>
+          <div class="col-md-3">
+            <button type="button" class="btn btn-outline-primary w-100" onclick="testApiConnection()">Test Connection</button>
+          </div>
+        </div>
+        <div id="apiTestAlert" class="alert mt-2" style="display: none;"></div>
+      </div>
+    </div>
 
-    <button class="btn btn-primary">Update Profile</button>
+    <div class="mb-4">
+      <button class="btn btn-primary">Update Profile</button>
+    </div>
   </form>
 
   {% if all_users %}
-    <hr>
-    <h4>🛠️ Manage Users</h4>
-    <form method="POST" class="row g-2 align-items-end mb-4">
-      <input type="hidden" name="action" value="add_user">
-      <div class="col"><input name="new_username" class="form-control" placeholder="Username" required></div>
+  <hr>
+  <h4 class="mt-4">🛠️ Manage Users</h4>
+
+  <form method="POST" class="mb-4">
+    <input type="hidden" name="action" value="add_user">
+    <div class="row g-2 mb-2">
+      <div class="col"><input name="new_username" class="form-control" placeholder="New username" required></div>
       <div class="col"><input name="new_password" class="form-control" placeholder="Password" required></div>
       <div class="col"><input name="new_email" class="form-control" placeholder="Email"></div>
       <div class="col">
@@ -104,59 +117,68 @@
         </select>
       </div>
       <div class="col"><button class="btn btn-success w-100">Add</button></div>
-    </form>
+    </div>
+  </form>
 
-    <table class="table table-bordered table-sm">
-      <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Action</th></tr></thead>
-      <tbody>
-        {% for u in all_users %}
-        <tr>
-          <td>{{ u.username }}</td>
-          <td>{{ u.email }}</td>
-          <td>{{ 'Admin' if u.is_admin else 'User' }}</td>
-          <td>
-            {% if u.id != user['id'] %}
-              <form method="POST" style="display:inline;">
-                <input type="hidden" name="action" value="delete_user">
-                <input type="hidden" name="user_id" value="{{ u.id }}">
-                <button class="btn btn-danger btn-sm">Delete</button>
-              </form>
-            {% else %}
-              <span class="text-muted">Current</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <table class="table table-bordered table-sm">
+    <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for u in all_users %}
+      <tr>
+        <td>{{ u.username }}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ 'Admin' if u.is_admin else 'User' }}</td>
+        <td>
+          {% if u.id != user['id'] %}
+            <form method="POST" style="display:inline;">
+              <input type="hidden" name="action" value="delete_user">
+              <input type="hidden" name="user_id" value="{{ u.id }}">
+              <button class="btn btn-danger btn-sm">Delete</button>
+            </form>
+          {% else %}
+            <span class="text-muted">Current</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
   {% endif %}
 </div>
 
 <script>
-function testApiKey() {
-  const vendor = document.getElementById('vendorSelect').value;
-  const key = document.getElementById('apiKeyInput').value;
-  const resultBox = document.getElementById('test-result');
+function testApiConnection() {
+  const vendor = document.getElementById('apiVendorSelect').value;
+  const apiKey = document.getElementById('apiKeyInput').value;
+
+  if (!vendor || !apiKey) {
+    alert('Please select a vendor and enter an API key first.');
+    return;
+  }
 
   fetch('/test_api', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ vendor: vendor, api_key: key })
+    body: JSON.stringify({ vendor: vendor, api_key: apiKey })
   })
   .then(res => res.json())
   .then(data => {
+    const alertBox = document.getElementById('apiTestAlert');
     if (data.status === 'success') {
-      resultBox.textContent = `✅ ${vendor} API Key is valid.`;
-      resultBox.className = 'form-text text-success';
+      alertBox.className = 'alert alert-success';
+      alertBox.innerText = '✅ Connection successful!';
     } else {
-      resultBox.textContent = `❌ Failed: ${data.message || 'Invalid key'}`;
-      resultBox.className = 'form-text text-danger';
+      alertBox.className = 'alert alert-danger';
+      alertBox.innerText = `❌ Failed: ${data.message}`;
     }
+    alertBox.style.display = 'block';
+  })
+  .catch(error => {
+    const alertBox = document.getElementById('apiTestAlert');
+    alertBox.className = 'alert alert-danger';
+    alertBox.innerText = `❌ Error testing API: ${error.message}`;
+    alertBox.style.display = 'block';
   });
-
-  // Save to hidden field
-  const hiddenInput = document.getElementById('hidden-' + vendor);
-  if (hiddenInput) hiddenInput.value = key;
 }
 </script>
 

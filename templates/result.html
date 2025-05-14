@@ -51,7 +51,25 @@
       <li class="list-group-item"><strong>Threat Label:</strong> {{ result.vt.popular_threat or 'N/A' }}</li>
       <li class="list-group-item"><strong>VirusTotal Report:</strong> <a href="{{ result.vt.link }}" target="_blank">View Full Report</a></li>
     </ul>
+
+    {% if result.vt.sandbox_verdicts %}
+      <h5 class="mt-4">🧬 Sandbox Verdicts</h5>
+      <table class="table table-bordered table-sm">
+        <thead><tr><th>Vendor</th><th>Category</th><th>Malware Names</th><th>Classification</th></tr></thead>
+        <tbody>
+          {% for vendor, detail in result.vt.sandbox_verdicts.items() %}
+            <tr>
+              <td>{{ vendor }}</td>
+              <td>{{ detail.category }}</td>
+              <td>{{ detail.malware_names | join(', ') }}</td>
+              <td>{{ detail.malware_classification | join(', ') }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
   {% endif %}
+
 
   <div class="chart-box mt-4">
     <h5 class="text-center">📊 Vendor Detection Chart</h5>

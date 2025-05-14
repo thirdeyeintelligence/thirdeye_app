@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 import sqlite3
 import random
+import requests
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from utils import detect_indicator_type
-from api_clients import call_virustotal_detailed, call_abusech, call_opencti, call_anyrun
+from api_clients import call_virustotal_detailed, call_anyrun, call_abusech, call_opencti
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
@@ -175,6 +176,7 @@ def profile():
                     else:
                         conn.execute('INSERT INTO api_keys (user_id, vendor, api_key) VALUES (?, ?, ?)', (session['user_id'], vendor, key))
         conn.commit()
+        flash('Profile updated successfully!', 'success')
 
     all_users = []
     if session.get('is_admin'):
